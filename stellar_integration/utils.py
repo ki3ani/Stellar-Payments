@@ -1,5 +1,21 @@
 from stellar_sdk import Asset, Keypair, Server, TransactionBuilder, Network
 import requests
+from django.conf import settings
+from cryptography.fernet import Fernet
+
+# Utility functions for encryption
+def get_fernet():
+    return Fernet(settings.SECRET_KEY.encode())
+
+def encrypt_data(data):
+    fernet = get_fernet()
+    encrypted = fernet.encrypt(data.encode())
+    return encrypted.decode()
+
+def decrypt_data(data):
+    fernet = get_fernet()
+    decrypted = fernet.decrypt(data.encode())
+    return decrypted.decode()
 
 def create_stellar_account():
     keypair = Keypair.random()
@@ -29,7 +45,7 @@ def check_account_balance(account_id):
 
 def send_payment(from_account, to_account, amount, asset_code="XLM", asset_issuer=None):
     server = Server(horizon_url="https://horizon-testnet.stellar.org")
-    source_keypair = Keypair.from_secret(from_account.secret_seed)
+    source_keypair = Keypair.from_secret(from_account.get_secret_seed())  # Decrypt secret seed
     source_account = server.load_account(account_id=from_account.account_id)
     base_fee = server.fetch_base_fee()
     

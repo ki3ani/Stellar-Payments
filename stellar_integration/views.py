@@ -18,7 +18,8 @@ class StellarAccountViewSet(viewsets.ModelViewSet):
     def create_account(self, request):
         public_key, secret_seed = create_stellar_account()
         if public_key and secret_seed:
-            account = StellarAccount(user=request.user, account_id=public_key, secret_seed=secret_seed)
+            account = StellarAccount(user=request.user, account_id=public_key)
+            account.set_secret_seed(secret_seed)
             account.save()
             return Response({'public_key': public_key, 'secret_seed': secret_seed})
         return Response({'error': 'Failed to create the account'}, status=400)
@@ -54,7 +55,8 @@ class StellarAccountViewSet(viewsets.ModelViewSet):
         if any(b['asset_type'] == 'native' and float(b['balance']) < data['amount'] for b in balance):
             return Response({'error': 'Insufficient balance'}, status=400)
         
-        response = send_payment(from_account, data['to_account'], data['amount'])
+        secret_seed = from_account.get_secret_seed()  # Decrypt the secret seed
+        response = send_payment(from_account, data['to_account'], data['amount'], secret_seed=secret_seed)
         return Response({'response': response})
 
     @action(detail=False, methods=['get'])
