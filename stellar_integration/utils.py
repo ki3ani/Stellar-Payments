@@ -1,4 +1,4 @@
-from stellar_sdk import Keypair, Server, TransactionBuilder, Network
+from stellar_sdk import Asset, Keypair, Server, TransactionBuilder, Network
 import requests
 
 def create_stellar_account():
@@ -15,7 +15,7 @@ def create_stellar_account():
 
 def fund_account(public_key):
     friendbot_url = "https://friendbot.stellar.org"
-    response = requests.get(friendbot_url, params={"addr": public_key})
+    response = requests.get(friendbot_url, params={"addr": public_key}) 
 
     if response.status_code == 200:
         return response.json()
@@ -27,11 +27,18 @@ def check_account_balance(account_id):
     account = server.accounts().account_id(account_id).call()
     return account['balances']
 
-def send_payment(from_account, secret_seed, to_account, amount):
+def send_payment(from_account, to_account, amount, asset_code="XLM", asset_issuer=None):
     server = Server(horizon_url="https://horizon-testnet.stellar.org")
-    source_keypair = Keypair.from_secret(secret_seed)
-    source_account = server.load_account(account_id=from_account)
+    source_keypair = Keypair.from_secret(from_account.secret_seed)
+    source_account = server.load_account(account_id=from_account.account_id)
     base_fee = server.fetch_base_fee()
+    
+    # Determine the asset
+    if asset_code == "XLM":
+        asset = Asset.native()  # Lumens
+    else:
+        asset = Asset(asset_code, asset_issuer)  # Custom asset
+    
     transaction = TransactionBuilder(
         source_account=source_account,
         network_passphrase=Network.TESTNET_NETWORK_PASSPHRASE,
@@ -39,8 +46,9 @@ def send_payment(from_account, secret_seed, to_account, amount):
     ).add_text_memo("Test Transaction").append_payment_op(
         destination=to_account,
         amount=str(amount),
-        asset_code="XLM"
+        asset=asset
     ).build()
+    
     transaction.sign(source_keypair)
     response = server.submit_transaction(transaction)
     return response
