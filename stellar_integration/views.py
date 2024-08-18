@@ -5,6 +5,12 @@ from rest_framework.permissions import IsAuthenticated
 from .serializers import UserProfileSerializer, StellarAccountSerializer, SendPaymentSerializer
 from .models import StellarAccount, UserProfile
 from .utils import create_stellar_account, check_account_balance, send_payment, get_transaction_history
+from django.contrib.auth import get_user_model
+from rest_framework import generics
+from rest_framework.permissions import AllowAny
+from .serializers import UserRegistrationSerializer
+
+
 
 class StellarAccountViewSet(viewsets.ModelViewSet):
     queryset = StellarAccount.objects.all()
@@ -66,3 +72,9 @@ class UserProfileViewSet(viewsets.ModelViewSet):
             serializer.save()
             return Response(serializer.data)
         return Response(serializer.errors, status=400)
+
+
+class UserRegistrationView(generics.CreateAPIView):
+    queryset = get_user_model().objects.all()
+    serializer_class = UserRegistrationSerializer
+    permission_classes = [AllowAny]
