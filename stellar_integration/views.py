@@ -55,8 +55,7 @@ class StellarAccountViewSet(viewsets.ModelViewSet):
         if any(b['asset_type'] == 'native' and float(b['balance']) < data['amount'] for b in balance):
             return Response({'error': 'Insufficient balance'}, status=400)
         
-        secret_seed = from_account.get_secret_seed()  # Decrypt the secret seed
-        response = send_payment(from_account, data['to_account'], data['amount'], secret_seed=secret_seed)
+        response = send_payment(from_account, data['to_account'], data['amount'])
         return Response({'response': response})
 
     @action(detail=False, methods=['get'])
@@ -79,10 +78,10 @@ class UserProfileViewSet(viewsets.ModelViewSet):
         serializer = UserProfileSerializer(profile)
         return Response(serializer.data)
 
-    @action(detail=False, methods=['put'])
+    @action(detail=False, methods=['patch'])
     def update_profile(self, request):
         profile, created = UserProfile.objects.get_or_create(user=request.user)
-        serializer = UserProfileSerializer(profile, data=request.data)
+        serializer = UserProfileSerializer(profile, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data)

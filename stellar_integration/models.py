@@ -13,6 +13,7 @@ class StellarAccount(models.Model):
 
     def set_secret_seed(self, secret_seed):
         self.secret_seed = encrypt_data(secret_seed)
+        self.save()
 
     def get_secret_seed(self):
         return decrypt_data(self.secret_seed)

@@ -3,9 +3,8 @@ import requests
 from django.conf import settings
 from cryptography.fernet import Fernet
 
-# Utility functions for encryption
 def get_fernet():
-    return Fernet(settings.SECRET_KEY.encode())
+    return Fernet(settings.FERNET_KEY)
 
 def encrypt_data(data):
     fernet = get_fernet()
@@ -49,11 +48,10 @@ def send_payment(from_account, to_account, amount, asset_code="XLM", asset_issue
     source_account = server.load_account(account_id=from_account.account_id)
     base_fee = server.fetch_base_fee()
     
-    # Determine the asset
     if asset_code == "XLM":
-        asset = Asset.native()  # Lumens
+        asset = Asset.native()
     else:
-        asset = Asset(asset_code, asset_issuer)  # Custom asset
+        asset = Asset(asset_code, asset_issuer)
     
     transaction = TransactionBuilder(
         source_account=source_account,
