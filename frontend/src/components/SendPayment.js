@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { sendPayment, decryptSecretKey, isValidStellarAddress, isValidAmount } from '../utils/stellar';
+import { sendPayment, decryptSecretKey } from '../utils/stellar';
+import { isValidStellarAddress, isValidAmount } from '../utils/validation';
 
 function SendPayment() {
   const [destination, setDestination] = useState('');

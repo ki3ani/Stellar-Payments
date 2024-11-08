@@ -1,12 +1,15 @@
-import React from 'react';
-import QRCode from 'qrcode.react';
+import React, { useContext } from 'react';
+import { AuthContext } from '../context/AuthContext';
 
-function ReceivePayment({ publicKey }) {
+function ReceivePayment() {
+  const { auth } = useContext(AuthContext);
+
   return (
     <div>
-      <h2>Receive Payment</h2>
-      <QRCode value={publicKey} />
-      <p>Your Public Key: {publicKey}</p>
+      <h2>Receive Payments</h2>
+      <p>Your Public Key:</p>
+      <textarea readOnly value={auth.publicKey} rows="3" cols="60" />
+      <p>Share this key with others to receive payments.</p>
     </div>
   );
 }

@@ -1,13 +1,13 @@
-// SendTransaction.js
-
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
 import axios from 'axios';
 import { decryptSecretKey } from '../utils/stellar';
+import { isValidStellarAddress, isValidAmount } from '../utils/validation';
 import API_BASE_URL from '../config/apiConfig';
-import { Server, TransactionBuilder, Network, Asset, Keypair, Operation } from 'stellar-sdk';
+import { AuthContext } from '../context/AuthContext';
 
 function SendTransaction() {
-  const [recipientPublicKey, setRecipientPublicKey] = useState('');
+  const { auth } = useContext(AuthContext);
+  const [recipient, setRecipient] = useState('');
   const [amount, setAmount] = useState('');
   const [message, setMessage] = useState('');
   const [isSending, setIsSending] = useState(false);
@@ -16,12 +16,26 @@ function SendTransaction() {
     setIsSending(true);
     setMessage('');
     try {
-      if (!recipientPublicKey || !amount) {
-        setMessage('Please fill in all fields.');
+      // Validate input fields
+      if (!recipient || !amount) {
+        setMessage('Please fill in all required fields.');
         setIsSending(false);
         return;
       }
 
+      if (!isValidStellarAddress(recipient)) {
+        setMessage('Invalid Stellar address.');
+        setIsSending(false);
+        return;
+      }
+
+      if (!isValidAmount(amount)) {
+        setMessage('Invalid amount.');
+        setIsSending(false);
+        return;
+      }
+
+      // Decrypt the secret key
       const encryptedSecretKey = localStorage.getItem('encryptedSecretKey');
       const password = prompt('Enter your password to decrypt the secret key:');
       if (!password) {
@@ -36,37 +50,14 @@ function SendTransaction() {
         return;
       }
 
-      const server = new Server('https://horizon.stellar.org'); // Public network
-      const senderKeypair = Keypair.fromSecret(secretKey);
-      const senderPublicKey = senderKeypair.publicKey();
-
-      const senderAccount = await server.loadAccount(senderPublicKey);
-
-      const USDC = new Asset('USDC', 'GA5ZSEJYB37JRC5AVCIA5MOP4RHTM335X2KGX3IHOJAPP5RE34K4KZVN'); // Official issuer's public key
-
-      const transaction = new TransactionBuilder(senderAccount, {
-        fee: await server.fetchBaseFee(),
-        networkPassphrase: Network.PUBLIC_NETWORK_PASSPHRASE
-      })
-        .addOperation(
-          Operation.payment({
-            destination: recipientPublicKey,
-            asset: USDC,
-            amount: amount
-          })
-        )
-        .setTimeout(30)
-        .build();
-
-      transaction.sign(senderKeypair);
-
-      const signedXDR = transaction.toEnvelope().toXDR();
-
+      // Build and sign the transaction
       const response = await axios.post(`${API_BASE_URL}/transactions/send`, {
-        signedXDR: signedXDR
+        recipientPublicKey: recipient,
+        amount: amount,
+        secretKey: secretKey,
       }, {
         headers: {
-          Authorization: `Bearer ${localStorage.getItem('accessToken')}`
+          Authorization: `Bearer ${auth.accessToken}`
         }
       });
 
@@ -86,12 +77,12 @@ function SendTransaction() {
 
   return (
     <div>
-      <h2>Send USDC</h2>
+      <h2>Send USDC Transaction</h2>
       <input
         type="text"
-        value={recipientPublicKey}
-        onChange={(e) => setRecipientPublicKey(e.target.value)}
-        placeholder="Recipient Public Key"
+        value={recipient}
+        onChange={(e) => setRecipient(e.target.value)}
+        placeholder="Recipient Stellar Public Key"
       /><br/>
       <input
         type="number"

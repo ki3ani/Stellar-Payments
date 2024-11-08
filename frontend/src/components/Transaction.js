@@ -1,24 +1,27 @@
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import React, { useState, useEffect, useContext } from 'react';
+import { fetchTransactions } from '../utils/stellar';
+import { AuthContext } from '../context/AuthContext';
 
-function Transactions({ publicKey }) {
+function Transactions() {
+  const { auth } = useContext(AuthContext);
   const [transactions, setTransactions] = useState([]);
 
   useEffect(() => {
     const getTransactions = async () => {
-      const result = await axios.get(`http://localhost:3000/transactions/${publicKey}`);
-      setTransactions(result.data._embedded.records);
+      if (!auth.publicKey) return;
+      const result = await fetchTransactions(auth.publicKey);
+      setTransactions(result.records || []);
     };
     getTransactions();
-  }, [publicKey]);
+  }, [auth.publicKey]);
 
   return (
     <div>
       <h2>Transaction History</h2>
       <ul>
-        {transactions.map((tx) => (
-          <li key={tx.id}>
-            Amount: {tx.amount}, Asset: {tx.asset_code || 'XLM'}, Date: {tx.created_at}, Fee: {tx.fee_charged}
+        {transactions.map((txn, index) => (
+          <li key={index}>
+            <strong>Type:</strong> {txn.type} | <strong>Amount:</strong> {txn.amount} {txn.asset_code || 'XLM'} | <strong>Date:</strong> {new Date(txn.created_at).toLocaleString()}
           </li>
         ))}
       </ul>

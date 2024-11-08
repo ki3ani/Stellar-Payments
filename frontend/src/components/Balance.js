@@ -1,18 +1,19 @@
-// src/components/Balance.js
-
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { fetchBalances } from '../utils/stellar';
+import { AuthContext } from '../context/AuthContext';
 
-function Balance({ publicKey }) {
+function Balance() {
+  const { auth } = useContext(AuthContext);
   const [balances, setBalances] = useState([]);
 
   useEffect(() => {
     const getBalances = async () => {
-      const result = await fetchBalances(publicKey);
+      if (!auth.publicKey) return;
+      const result = await fetchBalances(auth.publicKey);
       setBalances(result);
     };
     getBalances();
-  }, [publicKey]);
+  }, [auth.publicKey]);
 
   return (
     <div>
